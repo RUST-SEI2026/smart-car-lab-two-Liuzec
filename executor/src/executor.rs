@@ -66,21 +66,56 @@ impl Default for Pose {
     }
 }
 
+/// 与倒车 / 加速等业务状态相关的可切换位。
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+pub struct State {
+    pub is_reverse: bool,
+}
+
+impl State {
+    pub fn be_reverse(&mut self) {
+        self.is_reverse = !self.is_reverse;
+    }
+}
+
 pub struct Executor {
     pose: Pose,
+    state: State,
 }
 
 impl Executor {
     pub fn with_pose(pose: Pose) -> Self {
-        Executor { pose }
+        Executor {
+            pose,
+            state: State::default(),
+        }
     }
 
     pub fn execute(&mut self, cmds: &str) {
         for cmd in cmds.chars() {
             match cmd {
-                'M' => self.pose.forward(),
-                'L' => self.pose.turn_left(),
-                'R' => self.pose.turn_right(),
+                'B' => self.state.be_reverse(),
+                'M' => {
+                    if self.state.is_reverse {
+                        self.pose.backward();
+                    } else {
+                        self.pose.forward();
+                    }
+                }
+                'L' => {
+                    if self.state.is_reverse {
+                        self.pose.turn_right();
+                    } else {
+                        self.pose.turn_left();
+                    }
+                }
+                'R' => {
+                    if self.state.is_reverse {
+                        self.pose.turn_left();
+                    } else {
+                        self.pose.turn_right();
+                    }
+                }
                 _ => (),
             }
         }
